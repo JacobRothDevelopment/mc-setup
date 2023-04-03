@@ -35,7 +35,7 @@ help() {
     echo_help "-h" "Help menu"
     echo_help "-s" "XMS - minimum memory value (default 1024M)"
     echo_help "-v" "Script version"
-    echo_help "-w" "World directory name"
+    echo_help "-w" "World directory name (required)"
     echo_help "-x" "XMX - maximum memory value (default 1024M)"
 }
 #endregion HELP AND USAGE FUNCTIONS
