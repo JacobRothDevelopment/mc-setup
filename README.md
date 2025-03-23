@@ -12,11 +12,11 @@ scripts for setting up and starting an mc server
 
 # FILE STRUCTURE
 
-```bash
-└── minecraft
+```
+└── minecraft/
     ├── mc-start.sh
-    ├── 1.19.4
+    ├── 1.19.4/
     │   └── server.jar
-    └── modded
+    └── modded/
         └── server.jar
 ```
