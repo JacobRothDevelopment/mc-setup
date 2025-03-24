@@ -17,6 +17,7 @@ scripts for setting up and starting an mc server
     ├── mc.sh
     ├── 1.19.4/
     │   └── server.jar
-    └── modded/
-        └── server.jar
+    ├── modded/
+    │   └── server.jar
+    └── backups/
 ```
