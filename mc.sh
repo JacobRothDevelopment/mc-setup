@@ -1,7 +1,8 @@
 #!/bin/bash
 
 #region CONSTANTS
-VERSION="0.3.0"
+
+VERSION="0.4.0"
 
 cyan='\e[36m'
 red='\e[31m'
@@ -13,9 +14,11 @@ XMS="1024M" # minimum memory value
 debug_mode=0
 dry_run_mode=0
 do_gui="n"
+
 #endregion
 
 #region FUNCTIONS
+
 debug() {
     if [ $debug_mode -gt 0 ]; then
         echo -e "${cyan}$1${no_color}"
@@ -39,6 +42,7 @@ inputs() {
     echo_help "help" "Help menu"
     echo_help "list" "List available servers"
     echo_help "start" "Start given server [-w required]"
+    echo_help "install" "Install server [-w required]"
 
     echo "options"
     echo_help "-d" "Debug mode - will not start minecraft server"
@@ -54,6 +58,7 @@ echo_default_run_sh() {
     ret+="java -server -Xmx$XMX -Xms$XMS -jar server.jar nogui"
     echo "$ret"
 }
+
 #endregion
 
 #region CAPTURE OPERATION
@@ -64,6 +69,7 @@ shift 1
 #endregion
 
 #region CAPTURE FLAGS
+
 while getopts "w:hdvr" flag; do
     case $flag in
     v)
@@ -91,21 +97,29 @@ while getopts "w:hdvr" flag; do
         ;;
     esac
 done
+
 #endregion
 
 case $operation in
 "list")
     debug "listing server"
-    # ls -d */ | sed 's#/##'
-    # find * -maxdepth 1 -mindepth 1 -type f -name 'server.jar' -print0 | xargs -0 -- dirname
-    find * -maxdepth 1 -mindepth 1 -type f -name 'run.sh' -print0 | xargs -0 -- dirname
+    # find * -maxdepth 1 -mindepth 1 -type f -name 'run.sh' -print0 | xargs -0 -- dirname
+
+    found_run_scripts=0
+    for d in */; do
+        [ -f "${d}run.sh" ] && echo "${d%/}" && found_run_scripts=1
+    done
+
+    if [ $found_run_scripts -eq 0 ]; then
+        warn "No servers found"
+    fi
     ;;
 "backup")
     debug "starting backup of $world"
 
     # validate required flags
     if [[ -z $world ]]; then
-        error "Invalid options for start"
+        error "Invalid options for backup"
         usage
         inputs
         exit 1
@@ -166,6 +180,35 @@ case $operation in
             echo -e $(echo_default_run_sh) >>$world/run.sh
         fi
     fi
+    ;;
+"install")
+    debug "installing server $world"
+
+    # validate required flags
+    if [[ -z $world ]]; then
+        error "Invalid options for install"
+        usage
+        inputs
+        exit 1
+    fi
+
+    if [ -e $world ]; then
+        error "Server directory already exists"
+        exit 1
+    fi
+
+    mkdir $world
+    cd $world
+
+    echo "Downloading server jar"
+    curl -o server.jar -L "https://mcutils.com/api/server-jars/vanilla/$world/download"
+    # https://mcutils.com/api/server-jars/vanilla/26.2/download
+
+    echo "Creating default run.sh"
+    echo -e $(echo_default_run_sh) >>run.sh
+
+    echo "Server installed in $world"
+    echo "Open $world/run.sh and approve the startup command before continuing"
     ;;
 *)
     error "Invalid operation"
