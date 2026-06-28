@@ -52,9 +52,10 @@ inputs() {
 }
 
 echo_default_run_sh() {
-    ret="echo -e \"\e[31m$world/run.sh hasn't been approved to run yet\e[0m\"\n"
-    ret+="exit 1\n"
-    ret+="# remove the above lines to approve the script to run\n\n"
+    ret=""
+    # ret+="echo -e \"\e[31m$world/run.sh hasn't been approved to run yet\e[0m\"\n"
+    # ret+="exit 1\n"
+    # ret+="# remove the above lines to approve the script to run\n\n"
     ret+="java -server -Xmx$XMX -Xms$XMS -jar server.jar nogui"
     echo "$ret"
 }
