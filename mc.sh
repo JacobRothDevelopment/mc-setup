@@ -2,7 +2,7 @@
 
 #region CONSTANTS
 
-VERSION="0.4.0"
+VERSION="0.4.1"
 
 cyan='\e[36m'
 red='\e[31m'
@@ -73,28 +73,28 @@ shift 1
 
 while getopts "w:hdvr" flag; do
     case $flag in
-    v)
-        echo $VERSION
-        exit 0
+        v)
+            echo $VERSION
+            exit 0
         ;;
-    w) world=$OPTARG ;;
-    h)
-        usage
-        inputs
-        exit 0
+        w) world=$OPTARG ;;
+        h)
+            usage
+            inputs
+            exit 0
         ;;
-    d)
-        debug_mode=1
-        warn "using debug mode"
+        d)
+            debug_mode=1
+            warn "using debug mode"
         ;;
-    r)
-        dry_run_mode=1
-        warn "using dry run mode"
+        r)
+            dry_run_mode=1
+            warn "using dry run mode"
         ;;
-    *)
-        usage
-        inputs
-        exit 1
+        *)
+            usage
+            inputs
+            exit 1
         ;;
     esac
 done
@@ -102,119 +102,128 @@ done
 #endregion
 
 case $operation in
-"list")
-    debug "listing server"
-    # find * -maxdepth 1 -mindepth 1 -type f -name 'run.sh' -print0 | xargs -0 -- dirname
+    "list")
+        debug "listing servers"
+        # find * -maxdepth 1 -mindepth 1 -type f -name 'run.sh' -print0 | xargs -0 -- dirname
 
-    found_run_scripts=0
-    for d in */; do
-        [ -f "${d}run.sh" ] && echo "${d%/}" && found_run_scripts=1
-    done
+        found_run_scripts=0
+        for d in */; do
+            [ -f "${d}run.sh" ] && echo "${d%/}" && found_run_scripts=1
+        done
 
-    if [ $found_run_scripts -eq 0 ]; then
-        warn "No servers found"
-    fi
-    ;;
-"backup")
-    debug "starting backup of $world"
-
-    # validate required flags
-    if [[ -z $world ]]; then
-        error "Invalid options for backup"
-        usage
-        inputs
-        exit 1
-    fi
-
-    date="$(date +%Y%m%d-%H%M%S)"
-    backup_file="backups/$world-$date.tar.gz"
-
-    if [ $dry_run_mode -gt 0 ]; then
-        warn "Backup not created in dry run mode"
-        echo "Command for server backup:"
-        echo "mkdir \$(dirname $backup_file)"
-        echo "tar -czvf $backup_file $world"
-    else
-        # stolen from https://stackoverflow.com/a/62007533
-        mkdir $(dirname $backup_file)
-        tar -czvf $backup_file $world
-        echo "Server backup created at $backup_file"
-    fi
-    ;;
-"start")
-    debug "starting server $world"
-
-    # validate required flags
-    if [[ -z $world ]]; then
-        error "Invalid options for start"
-        usage
-        inputs
-        exit 1
-    fi
-
-    start_script="$world/run.sh"
-
-    if [ -e $start_script ]; then
-        if [ $dry_run_mode -gt 0 ]; then
-            warn "server is not started in dry run mode"
-            echo "Commands for server startup:"
-            echo "cd $world"
-            echo "bash run.sh"
-        else
-            cd $world
-            bash run.sh
-            # example: java -Xmx1024M -Xms1024M -jar minecraft_server.1.19.3.jar nogui
-            # java -Xmx$XMX -Xms$XMS -jar server.jar nogui
+        if [ $found_run_scripts -eq 0 ]; then
+            warn "No servers found"
         fi
-    else
-        error "Server startup script does not exist"
+    ;;
+    "backup")
+        debug "starting backup of $world"
+
+        # validate required flags
+        if [[ -z $world ]]; then
+            error "Invalid options for backup"
+            usage
+            inputs
+            exit 1
+        fi
+
+        date="$(date +%Y%m%d-%H%M%S)"
+        backup_file="backups/$world-$date.tar.gz"
 
         if [ $dry_run_mode -gt 0 ]; then
-            warn "File not created in dry run mode"
-            warn "This is the run.sh file that would have been created"
+            warn "Backup not created in dry run mode"
+            echo "Command for server backup:"
+            echo "mkdir \$(dirname $backup_file)"
+            echo "tar -czvf $backup_file $world"
+        else
+            # stolen from https://stackoverflow.com/a/62007533
+            mkdir $(dirname $backup_file)
+            tar -czvf $backup_file $world
+            echo "Server backup created at $backup_file"
+        fi
+    ;;
+    "start")
+        debug "starting server $world"
+
+        # validate required flags
+        if [[ -z $world ]]; then
+            error "Invalid options for start"
+            usage
+            inputs
+            exit 1
+        fi
+
+        start_script="$world/run.sh"
+
+        if [ -e $start_script ]; then
+            if [ $dry_run_mode -gt 0 ]; then
+                warn "server is not started in dry run mode"
+                echo "Commands for server startup:"
+                echo "cd $world"
+                echo "bash run.sh"
+            else
+                cd $world
+                bash run.sh
+                # example: java -Xmx1024M -Xms1024M -jar minecraft_server.1.19.3.jar nogui
+                # java -Xmx$XMX -Xms$XMS -jar server.jar nogui
+            fi
+        else
+            error "Server startup script does not exist"
+
+            if [ $dry_run_mode -gt 0 ]; then
+                warn "File not created in dry run mode"
+                warn "This is the run.sh file that would have been created"
+                echo -e $(echo_default_run_sh)
+            else
+                debug "Creating default run.sh"
+
+                touch $world/run.sh
+                echo -e $(echo_default_run_sh) >>$world/run.sh
+            fi
+        fi
+    ;;
+    "install")
+        debug "installing server $world"
+
+        # validate required flags
+        if [[ -z $world ]]; then
+            error "Invalid options for install"
+            usage
+            inputs
+            exit 1
+        fi
+
+        if [ -e $world ]; then
+            error "Server directory already exists"
+            exit 1
+        fi
+
+        if [ $dry_run_mode -gt 0 ]; then
+            warn "server is not installed in dry run mode"
+
+            echo "Checking for server jar"
+            curl -L "https://mcutils.com/api/server-jars/vanilla/$world/download"
+            # https://mcutils.com/api/server-jars/vanilla/26.2/download
+
+            warn "This is the run.sh file that would have been created in $world"
             echo -e $(echo_default_run_sh)
         else
-            warn "Creating default run.sh"
-            warn "Open $world/run.sh and approve the startup command before continuing"
+            mkdir $world
+            cd $world
 
-            touch $world/run.sh
-            echo -e $(echo_default_run_sh) >>$world/run.sh
+            debug "Downloading server jar"
+            curl -o server.jar -L "https://mcutils.com/api/server-jars/vanilla/$world/download"
+            # https://mcutils.com/api/server-jars/vanilla/26.2/download
+
+            debug "Creating default run.sh"
+            echo -e $(echo_default_run_sh) >>run.sh
+
+            echo "Server installed in $world"
         fi
-    fi
     ;;
-"install")
-    debug "installing server $world"
-
-    # validate required flags
-    if [[ -z $world ]]; then
-        error "Invalid options for install"
+    *)
+        error "Invalid operation"
         usage
         inputs
         exit 1
-    fi
-
-    if [ -e $world ]; then
-        error "Server directory already exists"
-        exit 1
-    fi
-
-    mkdir $world
-    cd $world
-
-    echo "Downloading server jar"
-    curl -o server.jar -L "https://mcutils.com/api/server-jars/vanilla/$world/download"
-    # https://mcutils.com/api/server-jars/vanilla/26.2/download
-
-    echo "Creating default run.sh"
-    echo -e $(echo_default_run_sh) >>run.sh
-
-    echo "Server installed in $world"
-    echo "Open $world/run.sh and approve the startup command before continuing"
-    ;;
-*)
-    error "Invalid operation"
-    usage
-    inputs
-    exit 1
     ;;
 esac
