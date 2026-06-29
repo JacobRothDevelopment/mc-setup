@@ -2,10 +2,13 @@
 
 #region CONSTANTS
 
-VERSION="0.4.1"
+set -euo pipefail
+
+VERSION="0.4.2"
 
 cyan='\e[36m'
 red='\e[31m'
+green='\e[32m'
 yellow='\e[93m'
 no_color='\e[0m'
 
@@ -26,6 +29,7 @@ debug() {
 }
 error() { echo -e "${red}$1${no_color}"; }
 warn() { echo -e "${yellow}$1${no_color}"; }
+success() { echo -e "${green}$1${no_color}"; }
 
 echo_help() {
     echo -e "\t${1}\t${2}"
@@ -138,7 +142,7 @@ case $operation in
             # stolen from https://stackoverflow.com/a/62007533
             mkdir $(dirname $backup_file)
             tar -czvf $backup_file $world
-            echo "Server backup created at $backup_file"
+            success "Server backup created at $backup_file"
         fi
     ;;
     "start")
@@ -217,7 +221,7 @@ case $operation in
             debug "Creating default run.sh"
             echo -e $(echo_default_run_sh) >>run.sh
 
-            echo "Server installed in $world"
+            success "Server installed in $world"
         fi
     ;;
     *)
